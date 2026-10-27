@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CIHDT — Counterfactual-Driven Adaptive Security Control</title>
+<meta name="description" content="Validating machine-learning updates for consumer IoT against futures a digital twin committed to in advance. VIT BCSE497J Project-I.">
+<style>
+  :root{
+    --head:#000; --body:#272525; --muted:#66666b; --accent:#007ebd;
+    --card:rgba(255,255,255,.86); --ring:#e6e6e6; --ok:#2c8c2c; --warn:#b47300;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:var(--sans); color:var(--body); line-height:1.6;
+    background:
+      radial-gradient(900px 520px at 4% -8%, #f9ecfa 0%, transparent 62%),
+      radial-gradient(760px 620px at -4% 108%, #c2dae8 0%, transparent 68%),
+      radial-gradient(820px 560px at 104% 96%, #dceaf3 0%, transparent 66%),
+      linear-gradient(#fff 0%, #e4eff6 100%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  .card{
+    background:var(--card); border:1px solid var(--ring); border-radius:12px;
+    padding:36px; margin:22px 0; backdrop-filter:blur(2px);
+  }
+  h1,h2,h3{font-family:var(--serif);color:var(--head);font-weight:700;line-height:1.2;margin:0}
+  h1{font-size:2.3rem;margin-bottom:14px}
+  h2{font-size:1.55rem;margin:0 0 6px}
+  h3{font-size:1.05rem;margin:0 0 4px}
+  .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+  .rule{width:84px;height:3px;background:var(--accent);border-radius:2px;margin:14px 0 20px}
+  p{margin:0 0 14px}
+  a{color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.18rem;line-height:1.5;color:var(--head)}
+  header.hero{padding:62px 0 8px}
+  .meta{color:var(--muted);font-size:.92rem}
+  .grid{display:grid;gap:18px}
+  @media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}}
+  .stat{text-align:center;padding:18px 10px;border:1px solid var(--ring);border-radius:10px;background:#fff}
+  .stat b{display:block;font-family:var(--serif);font-size:1.75rem;color:var(--accent);line-height:1.1}
+  .stat span{font-size:.78rem;color:var(--muted)}
+  .stat.ok b{color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;margin:10px 0}
+  th{background:#e8f3f9;text-align:left;font-weight:700;color:var(--head)}
+  th,td{padding:9px 11px;border-bottom:1px solid var(--ring)}
+  td.n,th.n{text-align:center}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:#e8f3f9;color:var(--accent)}
+  .tag.ok{background:#eff8ef;color:var(--ok)} .tag.warn{background:#fbf7e8;color:var(--warn)}
+  .btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;font-size:.9rem;margin:4px 8px 4px 0}
+  .btn.alt{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+  figure{margin:0}
+  figure img{width:100%;border:1px solid var(--ring);border-radius:8px;background:#fff}
+  figcaption{font-size:.82rem;color:var(--muted);text-align:center;margin-top:10px;font-style:italic}
+  code,pre{font-family:Consolas,'SF Mono',monospace}
+  pre{background:#0f2133;color:#dce9f2;padding:16px 18px;border-radius:8px;overflow-x:auto;font-size:.84rem;line-height:1.55}
+  ol,ul{margin:0 0 14px;padding-left:20px} li{margin-bottom:6px}
+  footer{padding:30px 0 56px;color:var(--muted);font-size:.86rem;text-align:center}
+  .note{border-left:3px solid var(--warn);background:#fbf7e8;padding:14px 16px;border-radius:0 8px 8px 0;font-size:.9rem}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="eyebrow">B.Tech · BCSE497J Project-I · VIT Vellore</p>
+  <h1>Counterfactual-Driven Adaptive Security Control<br>in Edge-Deployed Digital Twins</h1>
+  <div class="rule"></div>
+  <p class="lede">Judging a machine-learning update by what it would cost you tomorrow, rather than by how closely it resembles today.</p>
+  <p class="meta">Atrik (23BAI0136) · T V Sai Susanth (23BCI0231) · Pushpak (23BCT0129)<br>
+  Guided by Dr. Jim Solomon Raja, SCOPE · October 2026</p>
+  <p style="margin-top:20px">
+    <a class="btn" href="https://github.com/susanth1436/CIHDT">Source on GitHub</a>
+    <a class="btn alt" href="assets/CIHDT_ProjectI_Report.docx">Project report</a>
+    <a class="btn alt" href="assets/CIHDT_Review3_Deck.pptx">Review-3 deck</a>
+  </p>
+</div></header>
+
+<main class="wrap">
+
+<section class="card">
+  <p class="eyebrow">The problem</p>
+  <h2>A detector that keeps learning is a detector you can teach</h2>
+  <div class="rule"></div>
+  <p>Consumer IoT networks — cameras, locks, plugs, bulbs, sensors — are increasingly defended by models that run on a local edge gateway and retrain continuously on the telemetry they collect. That retraining is what keeps the detector current as a household changes. It is also its most exposed surface: an adversary who can introduce falsified or mislabelled training data can steer the model into accepting hostile behaviour as ordinary.</p>
+  <p>Existing poisoning defences are reactive. Anomaly filtering, reputation scoring and robust aggregation each inspect a contribution <em>after</em> it arrives, and judge it only against present or historical observations. A contribution engineered to resemble ordinary traffic passes unchallenged — and <strong>clean-label poisoning, which alters no label at all, defeats the entire family</strong>.</p>
+</section>
+
+<section class="card">
+  <p class="eyebrow">The mechanism</p>
+  <h2>Commit to the future first, then test against it</h2>
+  <div class="rule"></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="stat"><b>5</b><span>behavioural planes per twin</span></div>
+    <div class="stat"><b>20</b><span>futures committed in advance</span></div>
+    <div class="stat"><b>6</b><span>weighted score components</span></div>
+    <div class="stat"><b>187</b><span>scenarios in the audit bank</span></div>
+  </div>
+  <p>Every physical device is mirrored by a <strong>holographic digital twin</strong> that models it as five partial projections rather than one state vector, and commits — in advance — to twenty counterfactual trajectories describing how the device would behave if nothing were wrong.</p>
+  <p>An incoming retraining update is grafted onto a small trusted core, a shadow model is trained, and that shadow's behaviour on the committed futures yields a <strong>Counterfactual Consistency Score</strong>. The threshold it is judged against is calibrated at run time from honest traffic on that specific fleet, not hard-coded.</p>
+  <p>The ordering is the security invariant: <em>the futures must exist before the observation they are used to judge.</em></p>
+</section>
+
+<section class="card">
+  <p class="eyebrow">System architecture</p>
+  <h2>Where each decision is taken</h2>
+  <div class="rule"></div>
+  <figure>
+    <img src="assets/architecture.png" alt="System architecture: consumer IoT devices feeding an edge node containing the digital-twin state store, counterfactual scenario generator, state comparison, scenario assessment and security-control decision support modules.">
+    <figcaption>Fig. 1. Counterfactual attack scenario generation and adaptive security control using edge-deployed digital twins.</figcaption>
+  </figure>
+</section>
+
+<section class="card">
+  <p class="eyebrow">Results</p>
+  <h2>Thirteen decisions, thirteen correct</h2>
+  <div class="rule"></div>
+  <div class="grid g4" style="margin-bottom:20px">
+    <div class="stat"><b>0.9565</b><span>detection accuracy</span></div>
+    <div class="stat"><b>0.8568</b><span>calibrated accept gate</span></div>
+    <div class="stat ok"><b>13 / 13</b><span>correct decisions</span></div>
+    <div class="stat ok"><b>0.9736</b><span>poison resistance</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Crafted as</th><th class="n">CCS</th><th class="n">Gate</th><th class="n">Decision</th></tr></thead>
+    <tbody>
+      <tr><td>Honest contribution</td><td class="n">0.910</td><td class="n">0.857</td><td class="n"><span class="tag ok">accepted</span></td></tr>
+      <tr><td>Label flipping</td><td class="n">0.629</td><td class="n">0.857</td><td class="n"><span class="tag warn">quarantined</span></td></tr>
+      <tr><td>Gradual poisoning</td><td class="n">0.801</td><td class="n">0.857</td><td class="n"><span class="tag warn">quarantined</span></td></tr>
+      <tr><td>Backdoor trigger</td><td class="n">0.659</td><td class="n">0.857</td><td class="n"><span class="tag warn">quarantined</span></td></tr>
+      <tr><td>Sybil flood (8 shards)</td><td class="n">0.677–0.730</td><td class="n">0.907</td><td class="n"><span class="tag warn">quarantined</span></td></tr>
+      <tr><td>Clean-label poisoning</td><td class="n">0.735</td><td class="n">0.907</td><td class="n"><span class="tag warn">quarantined</span></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:.9rem"><strong>Clean-label is the decisive row.</strong> Its label mix barely moves, so every distributional check admits it; it is caught only by cross-checking its labels against the trusted model's own reading of its rows. Sybil shards face a raised gate because the burst of unseen contributor identities triggers the novelty penalty.</p>
+</section>
+
+<section class="card">
+  <p class="eyebrow">Running it</p>
+  <h2>Twelve steps, each a deliberate action</h2>
+  <div class="rule"></div>
+  <p>The console is a multi-page application with no JavaScript on any step page: every control is an HTML form that submits one action and redirects. Nothing happens unless an operator asks for it.</p>
+  <pre>git clone https://github.com/susanth1436/CIHDT.git
+cd CIHDT
+pip install -r requirements.txt
+
+python cli.py --walk     # all twelve steps on the terminal, ~20 seconds
+python run.py            # the operator console at http://127.0.0.1:8000</pre>
+  <div class="note">
+    <strong>This page is documentation, not the console.</strong> GitHub Pages serves static files, so the console — which trains models on request and keeps server-side sessions — runs from the commands above. A hosted instance is listed on the repository when one is live.
+  </div>
+</section>
+
+<section class="card">
+  <p class="eyebrow">Outcome</p>
+  <h2>Patent</h2>
+  <div class="rule"></div>
+  <p>An Indian Patent Application has been filed for <em>System and Method for Counterfactual-Driven Adaptive Security Control and Verified Model Updating in Edge-Deployed Digital Twins for Consumer Internet of Things Networks</em>.</p>
+  <p style="font-size:.9rem;color:var(--muted)">The contribution claimed is a method — a decision mechanism implementable on any edge gateway, independent of the model family.</p>
+</section>
+
+<section class="card">
+  <p class="eyebrow">Scope</p>
+  <h2>What this establishes, and what it does not</h2>
+  <div class="rule"></div>
+  <div class="grid g2">
+    <div>
+      <h3>Established</h3>
+      <ul style="font-size:.92rem">
+        <li>Futures committed in advance can be scored against reality.</li>
+        <li>The score separates honest contributions from five poisoning strategies without error across thirteen decisions.</li>
+        <li>The accept threshold can be derived at run time from the deployed fleet.</li>
+        <li>Promotion and recovery are gated rather than automatic.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Not established</h3>
+      <ul style="font-size:.92rem">
+        <li>Superiority over reactive baselines — no baseline was re-implemented against the same fleet. That is Phase II.</li>
+        <li>Generality across seeds: the figures characterise one run on one fleet.</li>
+        <li>Robustness to an adaptive adversary who knows the Consistency Score itself.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  School of Computer Science and Engineering · Vellore Institute of Technology, Vellore<br>
+  <a href="https://github.com/susanth1436/CIHDT">github.com/susanth1436/CIHDT</a>
+</footer>
+
+</body>
+</html>
