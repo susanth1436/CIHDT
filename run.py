@@ -7,19 +7,13 @@
 from __future__ import annotations
 
 import argparse
-import os
 import webbrowser
-
-# A hosting platform assigns the port and expects the process to bind every
-# interface.  Locally neither variable is set, so the console stays on
-# 127.0.0.1:8000 and still opens a browser.
-_ENV_PORT = os.environ.get("PORT")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="CIHDT operator console")
-    ap.add_argument("--host", default="0.0.0.0" if _ENV_PORT else "127.0.0.1")
-    ap.add_argument("--port", type=int, default=int(_ENV_PORT or 8000))
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--reload", action="store_true",
                     help="auto-reload on source changes (development)")
     ap.add_argument("--no-browser", action="store_true")
@@ -41,7 +35,7 @@ def main() -> None:
     print()
     auth.announce_initial_password()
 
-    if not args.no_browser and not _ENV_PORT:
+    if not args.no_browser:
         try:
             webbrowser.open(url)
         except Exception:

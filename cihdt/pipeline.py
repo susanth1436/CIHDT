@@ -53,12 +53,11 @@ try:
     from .live.device import LiveDevice, build_live_corpus
     from .live.host import PROVENANCE, HostSampler, available as live_available
     from .live.usb import UsbMonitor, UsbUnavailable
-    from .live import webusb
     LIVE_IMPORT_ERROR = ""
 except Exception as _exc:                                    # pragma: no cover
     LiveDevice = None                                        # type: ignore
     UsbMonitor = UsbUnavailable = HostSampler = None         # type: ignore
-    build_live_corpus = PROVENANCE = webusb = None           # type: ignore
+    build_live_corpus = PROVENANCE = None                    # type: ignore
     LIVE_IMPORT_ERROR = f"{type(_exc).__name__}: {_exc}"
     def live_available():                                    # type: ignore
         return False, LIVE_IMPORT_ERROR
@@ -302,20 +301,12 @@ class Pipeline:
 
     def choose_source(self, mode: str) -> Dict[str, Any]:
         """Pick simulated or live telemetry. The one decision before Step 1."""
-        if mode not in ("simulated", "live", "webusb"):
-            raise StepError("Choose the simulated fleet, live USB devices, or "
-                            "a device shared through the browser.")
+        if mode not in ("simulated", "live"):
+            raise StepError("Choose either the simulated fleet or live devices.")
         if len(self.fleet) and mode != self.source_mode:
             raise StepError(
                 "Devices have already been deployed from the other source. "
                 "Reset the console to change where telemetry comes from.")
-
-        # WebUSB needs no bus on this machine -- the browser reads the
-        # descriptors and posts them -- but host telemetry still comes from
-        # wherever the console is running, so the sampler is required.
-        if mode == "webusb":
-            if self.sampler is None:
-                self.sampler = HostSampler()
 
         if mode == "live":
             ok, reason = live_available()
@@ -394,60 +385,9 @@ class Pipeline:
             "summary": f"{len(self.fleet)} device(s) monitored",
         })
 
-    def add_webusb_device(self, payload: Dict[str, Any],
-                          device_type: Optional[str] = None) -> Dict[str, Any]:
-        """Enrol a peripheral whose descriptors the visitor's browser read.
-
-        The payload is untrusted: it crossed the network from a page.  It is
-        validated and clamped in :mod:`cihdt.live.webusb` before anything here
-        sees it, and what emerges is an ordinary ``UsbDevice``, so every stage
-        above Step 1 is unchanged -- which is the whole point of keeping the
-        telemetry source behind one boundary.
-        """
-        if self.source_mode != "webusb":
-            raise StepError("The console is not in browser-device mode. "
-                            "Choose that source before Step 1.")
-        if self.detector is not None:
-            raise StepError(
-                "The model is already trained on the current fleet. Reset the "
-                "console to monitor a different device.")
-        if not isinstance(payload, dict):
-            raise StepError("The browser sent no usable device descriptor.")
-        if device_type is not None and device_type not in DEVICE_TYPES:
-            raise StepError(f"Device type must be one of {DEVICE_TYPES}.")
-
-        usb_dev = webusb.to_usb_device(payload)
-        if usb_dev.slug() in self.fleet.devices:
-            raise StepError(f"{usb_dev.name} is already being monitored.")
-
-        # One sampler per device: it holds the previous counter reading, so a
-        # shared one would leave the second device in a tick measuring nothing.
-        dev = LiveDevice(usb_dev, HostSampler(), device_type=device_type)
-        self.fleet.devices[dev.device_id] = dev
-        if self.selected_device is None:
-            self.selected_device = dev.device_id
-
-        detail = webusb.describe(payload)
-        self.log(1, f"Enrolled {usb_dev.name} via WebUSB "
-                    f"({detail['vendor_id']}:{detail['product_id']}, "
-                    f"{dev.device_type}).")
-        return self._finish(1, "add_device", {
-            "device": dev.snapshot(),
-            "descriptor": detail,
-            "fleet": self.fleet.summary(),
-            "live": True,
-            "summary": f"{len(self.fleet)} device(s) monitored",
-        })
-
     @property
     def is_live(self) -> bool:
-        """True when telemetry comes from real hardware rather than a model.
-
-        Both live modes qualify: the device half is a real peripheral either
-        way, and the console reports the provenance of every feature
-        separately, so nothing downstream needs to tell them apart.
-        """
-        return self.source_mode in ("live", "webusb")
+        return self.source_mode == "live"
 
     # ======================================================================
     # STEP 1 -- create the IoT environment

@@ -7,72 +7,16 @@ parameterised with when a result was produced.
 from __future__ import annotations
 
 import os
-import tempfile
-import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-
-# Both directories are written to at run time, so a deployment that mounts a
-# writable volume elsewhere -- or whose application directory is read-only,
-# as most container platforms' are -- points these at it rather than patching
-# the source.  Unset, they sit beside the code, which is what a local
-# checkout wants.
-def _writable(path: Path) -> bool:
-    """Can this directory actually be created and written to?
-
-    Existing and writable are different questions on a container, where the
-    application directory is usually mounted read-only.  The check writes a
-    real file rather than consulting permissions, because that is the thing
-    the database will attempt a moment later.
-    """
-    try:
-        path.mkdir(parents=True, exist_ok=True)
-        probe = path / ".write-probe"
-        probe.write_text("", encoding="utf-8")
-        probe.unlink()
-        return True
-    except OSError:
-        return False
-
-
-def _state_dir(env_var: str, default: Path, fallback_name: str) -> Path:
-    """Where run-time state goes: the chosen path, or somewhere that works.
-
-    The database and the model registry are written while the console runs.
-    Beside the code is right for a checkout and wrong for a container, whose
-    application directory is read-only -- and a console that cannot open its
-    database cannot serve its sign-in page, which surfaces as an internal
-    error on the first request that touches an account.
-
-    An explicit CIHDT_* path is honoured when it is usable.  Otherwise the
-    temporary directory is used, which every platform guarantees is
-    writable.  State there does not survive a restart, so the fallback is
-    announced rather than applied quietly: losing the accounts is recoverable
-    and confusing, while refusing to start is neither.
-    """
-    chosen = Path(os.environ.get(env_var) or default)
-    if _writable(chosen):
-        return chosen
-
-    spare = Path(tempfile.gettempdir()) / "cihdt" / fallback_name
-    if not _writable(spare):                                 # pragma: no cover
-        raise RuntimeError(
-            f"Neither {chosen} nor {spare} can be written to. Set {env_var} "
-            f"to a writable directory.")
-    warnings.warn(
-        f"{chosen} is not writable, so {fallback_name} is being kept in "
-        f"{spare} instead. It will not survive a restart -- set {env_var} to "
-        f"a writable path, or a persistent disk, to keep it.",
-        RuntimeWarning, stacklevel=2)
-    return spare
-
-
-ARTIFACTS = _state_dir("CIHDT_ARTIFACTS_DIR", ROOT / "artifacts", "artifacts")
+ARTIFACTS = ROOT / "artifacts"
 MODEL_DIR = ARTIFACTS / "models"
-DATA_DIR = _state_dir("CIHDT_DATA_DIR", ROOT / "data", "data")
-MODEL_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR = ROOT / "data"
+
+for _p in (ARTIFACTS, MODEL_DIR, DATA_DIR):
+    _p.mkdir(parents=True, exist_ok=True)
 
 SEED = int(os.environ.get("CIHDT_SEED", "1337"))
 

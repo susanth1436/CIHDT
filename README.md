@@ -2,13 +2,6 @@
 
 **Predictive Edge AI Retraining for Real-Time Threat Detection in Consumer IoT Networks**
 
-### 🌐 [susanth1436.github.io/CIHDT](https://susanth1436.github.io/CIHDT/)
-
-The project site: the mechanism, the architecture, the validation results, and
-the report and Review-3 deck to download. It is documentation — GitHub Pages
-serves static files, and the console trains models on request and holds
-server-side sessions, so the console itself runs from the commands below.
-
 A working implementation of the twelve-step framework, built as a **manual
 operator console**. You choose the devices. You run every step yourself. Nothing
 happens on its own.
