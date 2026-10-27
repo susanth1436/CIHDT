@@ -11,6 +11,12 @@ fastapi==0.141.1
 uvicorn[standard]==0.51.0
 pydantic==2.13.4
 
+# Starlette parses form bodies with this. The project never imports it, so no
+# import scan will find it -- but every control in the console is an HTML form,
+# and without it each POST fails inside the framework and the console answers
+# "Internal Server Error" to every sign-in and every step.
+python-multipart==0.0.32
+
 # --- the pipeline ----------------------------------------------------------
 numpy==2.5.1
 scikit-learn==1.9.0
