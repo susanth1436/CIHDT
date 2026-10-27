@@ -78,6 +78,22 @@ class HostUnavailable(RuntimeError):
     """Host telemetry cannot be sampled."""
 
 
+def _safe(call, default, *args, **kwargs):
+    """Read a host counter, or fall back when the platform refuses.
+
+    Every psutil reading in this module is optional in the same way: a host
+    that will not answer leaves the feature at its default, and PROVENANCE
+    already tells the operator which features describe the host rather than
+    the device. What must never happen is an unhandled error from a counter,
+    because that turns a missing reading into a failed page.
+    """
+    try:
+        return call(*args, **kwargs)
+    except (psutil.AccessDenied, PermissionError, OSError, RuntimeError,
+            AttributeError, TypeError):
+        return default
+
+
 class HostSampler:
     """Turns this machine into one observation per call.
 
@@ -100,12 +116,38 @@ class HostSampler:
         self.prime()
 
     # ------------------------------------------------------------------ prime
+    @staticmethod
+    def _io_counters() -> Optional[Any]:
+        """Network counters, or None where the platform will not give them.
+
+        ``net_io_counters`` is documented to return None when no counters are
+        available, and inside a restricted container it can also raise
+        outright.  A host that cannot answer is an ordinary condition here --
+        the features it would have fed are reported as unavailable rather
+        than invented -- so neither outcome may reach the caller as an
+        exception.
+        """
+        try:
+            return psutil.net_io_counters()
+        except (psutil.AccessDenied, PermissionError, OSError, RuntimeError):
+            return None
+
+    @staticmethod
+    def _process_count() -> int:
+        try:
+            return len(psutil.pids())
+        except (psutil.AccessDenied, PermissionError, OSError):
+            return 0
+
     def prime(self) -> None:
         """Take the first reading, which only establishes the baseline."""
         self._last_t = time.perf_counter()
-        self._last_io = psutil.net_io_counters()
-        self._last_procs = len(psutil.pids())
-        psutil.cpu_percent(interval=None)      # arm the cpu counter
+        self._last_io = self._io_counters()
+        self._last_procs = self._process_count()
+        try:
+            psutil.cpu_percent(interval=None)  # arm the cpu counter
+        except (psutil.AccessDenied, PermissionError, OSError):
+            pass
 
     # ----------------------------------------------------------------- sample
     def _connections(self) -> Tuple[int, int, int]:
@@ -134,13 +176,20 @@ class HostSampler:
         """
         now = time.perf_counter()
         dt = max(1e-3, now - (self._last_t or now))
-        io = psutil.net_io_counters()
-        procs = len(psutil.pids())
+        io = self._io_counters()
+        procs = self._process_count()
 
-        d_recv = max(0, io.bytes_recv - self._last_io.bytes_recv)
-        d_sent = max(0, io.bytes_sent - self._last_io.bytes_sent)
-        d_pkt_in = max(0, io.packets_recv - self._last_io.packets_recv)
-        d_pkt_out = max(0, io.packets_sent - self._last_io.packets_sent)
+        # Either reading may be missing on a host that does not publish
+        # counters.  The deltas are then zero, which is what "no traffic
+        # observed" means, and the provenance table already states that these
+        # features describe the host rather than the peripheral.
+        if io is None or self._last_io is None:
+            d_recv = d_sent = d_pkt_in = d_pkt_out = 0
+        else:
+            d_recv = max(0, io.bytes_recv - self._last_io.bytes_recv)
+            d_sent = max(0, io.bytes_sent - self._last_io.bytes_sent)
+            d_pkt_in = max(0, io.packets_recv - self._last_io.packets_recv)
+            d_pkt_out = max(0, io.packets_sent - self._last_io.packets_sent)
         d_pkts = d_pkt_in + d_pkt_out
         d_bytes = d_recv + d_sent
 
@@ -150,8 +199,8 @@ class HostSampler:
         s = lambda name, value: v.__setitem__(FEATURE_INDEX[name], float(value))
 
         # --- host ---------------------------------------------------------
-        s("cpu_usage", psutil.cpu_percent(interval=None))
-        s("mem_usage", psutil.virtual_memory().percent)
+        s("cpu_usage", _safe(psutil.cpu_percent, 0.0, interval=None))
+        s("mem_usage", _safe(lambda: psutil.virtual_memory().percent, 0.0))
         s("net_in_kbps", d_recv * 8.0 / 1000.0 / dt)
         s("net_out_kbps", d_sent * 8.0 / 1000.0 / dt)
         s("packet_rate", d_pkts / dt)
