@@ -1,0 +1,25 @@
+# Runtime dependencies for a hosted deployment of the console.
+#
+# requirements.txt is the full development set: it also pins pytest and httpx
+# for the suite, and python-docx, python-pptx and matplotlib for building the
+# report and the slides. None of those are imported by the server, and
+# matplotlib alone roughly doubles the image, so a deployment installs this
+# file instead.
+#
+# The pins match requirements.txt exactly. numpy and scikit-learn are pinned
+# precisely on purpose: the Counterfactual Consistency Score comes out of a
+# random forest and a ridge fit, and a minor version change moves the third
+# decimal place.
+
+fastapi==0.141.1
+uvicorn[standard]==0.51.0
+pydantic==2.13.4
+
+numpy==2.5.1
+scikit-learn==1.9.0
+joblib==1.5.3
+
+# Host telemetry for live mode. On a server there are no USB peripherals to
+# enumerate, so the console reports live sampling as unavailable and runs the
+# simulated fleet -- but psutil is still what it uses to say so accurately.
+psutil==7.2.2

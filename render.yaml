@@ -1,0 +1,42 @@
+# Render Blueprint for the CIHDT operator console.
+#
+#   1. Sign in at https://render.com with the GitHub account that owns this
+#      repository.
+#   2. New -> Blueprint, pick susanth1436/CIHDT, and Render reads this file.
+#   3. Apply. The first build takes a few minutes, mostly compiling nothing --
+#      numpy and scikit-learn ship wheels, but they are large.
+#
+# The free plan has no persistent disk and spins the instance down after
+# roughly fifteen minutes without traffic, so the database is rebuilt empty on
+# each cold start and the first request afterwards waits for the wake-up.
+# That is acceptable for a demonstration and is the reason CIHDT_DATA_DIR
+# points at /tmp: the application directory is read-only on Render, and
+# writing the SQLite file beside the code would fail on boot.
+
+services:
+  - type: web
+    name: cihdt
+    runtime: python
+    plan: free
+    region: singapore          # nearest region to Vellore
+    branch: main
+    buildCommand: pip install --no-cache-dir -r requirements-web.txt
+    startCommand: python run.py
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      # Writable locations. Everything under /tmp survives for the life of
+      # the instance, which is all a demonstration run needs.
+      - key: CIHDT_DATA_DIR
+        value: /tmp/cihdt/data
+      - key: CIHDT_ARTIFACTS_DIR
+        value: /tmp/cihdt/artifacts
+      # The seed the README's figures were produced with.
+      - key: CIHDT_SEED
+        value: "1337"
+      # Registration is open, so anyone with the link can create an account
+      # and work through the twelve steps. Set this to 1 to require a code
+      # instead; the console then prints one at startup.
+      - key: CIHDT_REQUIRE_REGISTRATION_CODE
+        value: "0"

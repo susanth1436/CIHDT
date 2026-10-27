@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import io
+import json
 import time
 from typing import Any, Callable, Dict, List, Optional
 
@@ -113,6 +114,28 @@ def _str(f: Dict[str, str], key: str, default: str = "") -> str:
     return default if value is None else str(value)
 
 
+# The WebUSB chooser is the one control that cannot post ordinary fields: the
+# browser hands back a descriptor object, and the page carries it across in a
+# hidden field as JSON. It is bounded here and validated properly in
+# cihdt.live.webusb; a browser is not a trusted source.
+_MAX_PAYLOAD = 8192
+
+
+def _json_field(f: Dict[str, str], key: str) -> Dict[str, Any]:
+    raw = _str(f, key)
+    if not raw:
+        raise StepError("The browser sent no device descriptor.")
+    if len(raw) > _MAX_PAYLOAD:
+        raise StepError("That device descriptor is implausibly large.")
+    try:
+        value = json.loads(raw)
+    except (ValueError, TypeError) as exc:
+        raise StepError("The device descriptor was not readable.") from exc
+    if not isinstance(value, dict):
+        raise StepError("The device descriptor was not an object.")
+    return value
+
+
 # ---------------------------------------------------------------------------
 # action table -- one entry per operator action, mirroring the JSON API
 # ---------------------------------------------------------------------------
@@ -121,6 +144,8 @@ Handler = Callable[[Any, Dict[str, Any]], Dict[str, Any]]
 ACTIONS: Dict[str, Handler] = {
     "0/source": lambda p, f: p.choose_source(_str(f, "mode", "simulated")),
     "0/scan": lambda p, f: p.scan_usb(),
+    "0/webusb": lambda p, f: p.add_webusb_device(
+        _json_field(f, "payload"), _str(f, "device_type") or None),
 
     "1/add": lambda p, f: p.add_device(_str(f, "device_type")),
     "1/scan": lambda p, f: p.scan_usb(),
@@ -1058,6 +1083,38 @@ def _source_body(state: Dict[str, Any]) -> str:
         aside=H.badge("available" if live_ok else "unavailable",
                       "ok" if live_ok else "pending"))
 
+    # The browser route. It needs no bus on this machine, which is what makes
+    # it the only live option on a hosted console -- and it is offered
+    # everywhere, because whether the visitor's browser supports WebUSB is a
+    # question only the visitor's browser can answer.
+    picked = mode == "webusb"
+    browser = H.card(
+        "A device shared from your browser",
+        ("<p><button type='button' id='webusb-pick' class='btn'"
+         + (" disabled" if deployed else "")
+         + ">Choose a USB device…</button></p>"
+           "<p id='webusb-status' class='note'>Chrome and Edge can share a "
+           "peripheral attached to <em>your</em> machine with this console. "
+           "The browser draws the chooser; this page never sees a device you "
+           "do not pick.</p>"
+           "<form method='post' action='/step/0/webusb' id='webusb-form'>"
+           "<input type='hidden' name='payload' id='webusb-payload'>"
+           "</form>")
+        + (H.badge("in use", "accent") if picked else "")
+        + H.form("/step/0/source", "Use a browser-shared device",
+                 fields={"mode": "webusb"}, disabled=deployed or picked)
+        + H.metrics([
+            ("From your device", 4, "identity, class, power, uptime"),
+            ("From this server", 10, "host telemetry, not your machine",
+             "warn"),
+            ("Unavailable", 2, "reported, never invented", "warn"),
+        ]),
+        hint="Read over WebUSB from the descriptors the device publishes: "
+             "vendor and product id, class, revision and the bus power it "
+             "declares. The device is never claimed, so a webcam already held "
+             "by the operating system still enrols.",
+        aside=H.badge("needs Chrome or Edge", "pending"))
+
     disclosure = ""
     if live_ok and support.get("rows"):
         rows = []
@@ -1092,7 +1149,9 @@ def _source_body(state: Dict[str, Any]) -> str:
         nxt = H.note("Devices are already deployed from the "
                      f"{mode} source. Reset the console to change it.") + nxt
 
-    return sim + live + disclosure + nxt
+    # The script is loaded only here; every other page stays JS-free.
+    script = "<script src='/static/webusb.js' defer></script>"
+    return sim + live + browser + disclosure + nxt + script
 
 
 @router.get("/step/{step}", response_class=HTMLResponse)

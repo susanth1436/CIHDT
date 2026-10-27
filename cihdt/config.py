@@ -11,9 +11,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ARTIFACTS = ROOT / "artifacts"
+
+# Both directories are written to at run time, so a deployment that mounts a
+# writable volume elsewhere -- or whose application directory is read-only,
+# as most container platforms' are -- points these at it rather than patching
+# the source.  Unset, they sit beside the code, which is what a local
+# checkout wants.
+ARTIFACTS = Path(os.environ.get("CIHDT_ARTIFACTS_DIR") or ROOT / "artifacts")
 MODEL_DIR = ARTIFACTS / "models"
-DATA_DIR = ROOT / "data"
+DATA_DIR = Path(os.environ.get("CIHDT_DATA_DIR") or ROOT / "data")
 
 for _p in (ARTIFACTS, MODEL_DIR, DATA_DIR):
     _p.mkdir(parents=True, exist_ok=True)
