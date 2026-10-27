@@ -1,0 +1,35 @@
+# Pinned to the versions that actually produced the figures in README.md.
+#
+# numpy and scikit-learn are pinned exactly on purpose: the Counterfactual
+# Consistency Score comes out of a random forest and a ridge fit, and a minor
+# version change moves the third decimal place. Someone who installs this file
+# and runs `python cli.py --walk` should get the numbers the README quotes,
+# not numbers that are merely close to them.
+
+# --- the console -----------------------------------------------------------
+fastapi==0.141.1
+uvicorn[standard]==0.51.0
+pydantic==2.13.4
+
+# --- the pipeline ----------------------------------------------------------
+numpy==2.5.1
+scikit-learn==1.9.0
+joblib==1.5.3
+
+# --- live devices (Step 0) -------------------------------------------------
+# Without it the console still runs a simulated fleet; the telemetry-source
+# page then says live sampling is unavailable, and why.
+psutil==7.2.2
+
+# --- tests -----------------------------------------------------------------
+# httpx is not optional: fastapi.testclient is built on it, so `python -m
+# pytest` fails at import without it.
+pytest==9.1.1
+httpx==0.28.1
+
+# --- building the report and slides ----------------------------------------
+# Only needed for `python report/build_report.py` and `report/make_deck.py`.
+# Neither the console nor the tests import these.
+python-docx==1.2.0
+python-pptx==1.0.2
+matplotlib==3.11.1

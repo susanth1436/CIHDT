@@ -1,0 +1,25 @@
+# Operator database — real accounts, emails and PBKDF2 password hashes.
+# Created on first run; never commit it.
+data/*.sqlite3
+data/*.sqlite3-shm
+data/*.sqlite3-wal
+
+# Trained models. These are pickles (joblib), so they execute on load and
+# must not be distributed; `python cli.py --walk` regenerates them.
+artifacts/models/*.joblib
+artifacts/models/ledger.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+~$*

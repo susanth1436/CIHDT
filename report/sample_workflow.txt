@@ -1,0 +1,246 @@
+6.5  SAMPLE WORKFLOW
+
+The run reproduced below is a complete twelve-step walkthrough on a mixed
+eight-device fleet with seed 1337, executed end to end in 14.9 seconds on a
+laptop-class machine with no GPU. It is reproducible with the command
+
+    python cli.py --walk
+
+on the library versions pinned in requirements.txt. Every figure quoted in
+this section was produced by that run; none has been rounded for
+presentation or carried over from a different execution. The same sequence
+is available through the web console, where each step is a separate page and
+each action is a form submission, and through the JSON API, where each step
+is a single endpoint.
+
+Table 6.1 lists the twelve operator actions and what the system returned for
+each. The sections that follow expand the five moments where the framework's
+contribution is visible.
+
+
+Table 6.1  A complete twelve-step run on an eight-device fleet
+
+Step   Operator action                      What the system returned
+1      Add eight devices from the           8 devices across 6 distinct types:
+       catalogue                            2 cameras, 2 bulbs, 1 plug, 1 lock,
+                                            1 temperature sensor, 1 speaker.
+2      Start the gateway and request        45 ticks collected, 360 observations
+       telemetry ticks                      buffered; nothing fed to the twins.
+3      Create the twins and feed them       8 twins created, 360 observations
+       the buffer                           folded in, 8 of 8 twins ready.
+4      Fit each twin's forward model        8 ridge vector-autoregressive
+                                            predictors fitted at 3 lags, each
+                                            with its own residual spread.
+5      Commit futures and take a live       8 twins armed with 20 futures over a
+       tick                                 5-tick horizon; consistency 0.467 to
+                                            0.892; 0 of 8 flagged.
+6      Train the detector, then attack      Model v1 on a 2,660-row corpus:
+       two devices by hand                  accuracy 0.9565, FPR 0.0488,
+                                            FNR 0.0307. 12 of 12 attack
+                                            observations caught, 0 false alarms.
+7      Craft a hostile contribution         Update placed in the inbox; nothing
+                                            in the system altered.
+8      Calibrate the gate, then validate    Bank of 187 scenarios; honest mean
+       thirteen contributions               CCS 0.9168, spread 0.0068, threshold
+                                            0.8568. 13 of 13 decisions correct.
+9      Synthesise vaccines and measure      126 vaccine rows; poison resistance
+       resistance                           0.9736 against a gate of 0.78.
+10     Inspect what was held                12 updates held, each with an
+                                            attributed strategy and the evidence
+                                            behind it.
+11     Retrain on the safe pool and         Candidate on 2,015 rows scored
+       attempt promotion                    0.9674; all four gates passed; model
+                                            v2 promoted.
+12     Check model health, then force a     Health 1.000, model/twin agreement
+       rollback                             100%; rolled back to v1 and the
+                                            health baseline reset.
+
+
+6.5.1  Steps 1 to 4 — Establishing a baseline worth trusting
+
+The fleet is assembled one device at a time rather than generated in bulk,
+because everything downstream is shaped by that choice: the labelled corpus
+in Step 6 is built from the profiles of the devices actually deployed, so
+the detector is trained on the network it will police. Six distinct device
+types were chosen deliberately, since their baselines differ by three orders
+of magnitude and a heterogeneous fleet is a harder detection problem than a
+uniform one.
+
+Collection and learning are kept apart. Step 2 buffers 45 ticks — 45 ticks
+multiplied by 8 devices gives 360 observations — and those observations stay
+at the gateway until Step 3 folds them in. In an automatic system telemetry
+flows straight into the model of normal, which is precisely the door a slow
+poisoning attack walks through.
+
+Step 4 fits a ridge-regularised vector autoregression per twin over three
+lags. For smart_camera_01 the fitted model expected CPU usage to fall from
+32.88 to 25.45 and outbound traffic to rise from 2,356.97 to 2,765.47 kbps.
+The point forecast, however, is not the valuable output of this step: each
+fit also measures its own residual spread, which is what gives every device
+an individual tolerance. A rock-steady temperature sensor receives a tight
+envelope and a bursty smart speaker a wide one, and that is what prevents
+the consistency score in Step 5 from degenerating into a single threshold
+that is either deaf on noisy devices or hysterical on quiet ones.
+
+
+6.5.2  Step 5 — Committing before observing
+
+Each armed twin commits twenty predicted trajectories over a five-tick
+horizon, and only then is a live tick taken and scored against them. The
+ordering is the security invariant of the whole framework: the futures must
+exist before the observation they are used to judge, or the comparison means
+nothing.
+
+On this healthy fleet consistency ranged from 0.467 on smart_bulb_02 to
+0.892 on smart_camera_02, against a flag threshold of 0.35. No device was
+flagged, which is the result the step is meant to produce. Two devices
+showed strain in a named plane — topology on smart_bulb_02, network on
+temperature_sensor_01 — without crossing the threshold, and that naming is
+itself diagnostic: the plane that moves indicates what kind of attack is
+occurring, not merely that one has.
+
+A clean baseline here is a precondition for Step 12. The quantity the
+self-healing monitor watches is disagreement between the twin and the
+classifier, and a twin that cries wolf on healthy traffic makes that signal
+worthless.
+
+
+6.5.3  Step 6 — Two independent detectors
+
+A 2,660-row labelled corpus was generated from the deployed fleet's own
+profiles and split 1,649 for training and 1,011 for held-out evaluation.
+Model v1 trained in 0.96 seconds and reached 0.9565 accuracy across seven
+classes, with a false-positive rate of 0.0488 and a false-negative rate of
+0.0307. Its weakest class was data exfiltration at 87% recall, and the
+feature it leaned on most was log_port_diversity.
+
+Accuracy is the least interesting number on that list. A backdoored model
+scores well on accuracy — producing exactly that outcome is the purpose of a
+backdoor — so the two error rates, and the poison resistance measured in
+Step 9, are what indicate whether the model can be trusted.
+
+A DDoS attack was then launched by hand against smart_camera_01 and a brute
+force attack against smart_camera_02, and six ticks were run through the
+full gateway path. Of 48 observations, 12 came from devices genuinely under
+attack; the model caught all 12 and the twin independently flagged the same
+12, with no false alarms on the six healthy devices. Twin consistency on the
+attacked devices collapsed to between 0.000 and 0.006, against roughly 0.5
+to 0.9 for healthy traffic.
+
+That the two detectors agree is what makes Step 12 possible. They judge the
+same events by independent means — the twin against its own committed
+forecast, the model against what it learned from the corpus — so when a
+poisoned model later falls silent while the twin keeps flagging, that
+divergence is the only unlabelled evidence of compromise available.
+
+
+6.5.4  Step 8 — The decision the framework exists to make
+
+The accept gate is calibrated before any hostile update is judged. Eight
+honest contributions were generated from held-out telemetry and scored
+against an audit bank of 187 committed scenarios. They produced a mean
+Counterfactual Consistency Score of 0.9168 with a spread of 0.0068, and the
+threshold was set three spreads below the honest mean at 0.8568. The
+threshold is therefore derived from this fleet rather than hard-coded, which
+is the difference between a defence that transfers to a new network and one
+that works only on the machine it was written on.
+
+Thirteen contributions were then submitted — one honest, twelve hostile
+across the five poisoning strategies — and all thirteen decisions were
+correct.
+
+Crafted as                CCS      Gate     Decision       Attributed as
+Honest contribution       0.910    0.857    ACCEPTED       clean
+Label flipping            0.629    0.857    QUARANTINED    label_flip
+Gradual poisoning         0.801    0.857    QUARANTINED    gradual_poisoning
+Backdoor trigger          0.659    0.857    QUARANTINED    backdoor
+Sybil shard 1             0.707    0.857    QUARANTINED    sybil
+Sybil shards 2 to 8       0.677    0.907    QUARANTINED    sybil
+                          to 0.730
+Clean-label poisoning     0.735    0.907    QUARANTINED    clean_label
+
+Two rows warrant comment. From the second sybil shard onward the gate rises
+from 0.857 to 0.907, because the burst of previously unseen contributor
+identities triggers the novelty penalty; the first shard is still judged at
+the calibrated threshold, since at that point nothing unusual has yet been
+observed. The clean-label row is the result that separates this framework
+from distributional defences: its label mix barely moves, so every check
+based on label distribution admits it, and it is caught only by the
+cross-check of its labels against the trusted model's own reading of its
+rows.
+
+The label-flipping decision is worth following in full, because it shows
+what the console reports rather than merely what it concludes. The update
+was grafted onto the trusted core, a shadow model was trained, and that
+shadow was put in front of all 187 bank scenarios in 316 milliseconds. It
+scored 0.629 against a gate of 0.857, missing by 0.228. The component that
+drove the decision was label agreement at 0.298 against a weight of 0.20 —
+that is, the degree to which the update's labels match the trusted model's
+own reading of the same rows. Accepting it would have left only 81% of data
+exfiltration scenarios still detectable. The contributor's reputation stood
+at 0.889 against a floor of 0.70, so reputation alone would not have stopped
+it. Attribution named label flipping, and the update genuinely was label
+flipping.
+
+Nothing was applied at that point. The verdict is a recommendation until the
+operator acts on it, and it can be overruled in either direction, with the
+override written to the audit trail either way — because a security control
+a human cannot inspect and countermand is not a control but an oracle.
+
+
+6.5.5  Steps 9 to 12 — Immunize, retrain, and recover
+
+Step 9 synthesised 126 vaccine rows from the committed futures, split evenly
+across three families: 42 boundary rows, 42 relabel rows and 42 trigger
+rows. Each of the five poisoning strategies was then rehearsed — crafted,
+grafted onto the current pool at a realistic federated share, used to
+retrain a probe, and measured by how many of the 106 attack scenarios
+survived. Overall poison resistance was 0.9736 against a gate of 0.78,
+weakest against backdoor and clean-label poisoning at 0.9528 each and
+strongest against gradual poisoning at 1.0000.
+
+Step 10 held twelve updates, each retained intact with its attributed
+strategy and the evidence behind the attribution. For the clean-label
+update, that evidence was the cross-plane physics: a power-per-CPU agreement
+of 0.71, events-per-command of 0.84 and outbound-over-inbound of 0.87,
+indicating features altered without keeping the planes mutually consistent.
+
+Step 11 trained a candidate on 2,015 rows, including the 126 vaccine rows,
+in 2.4 seconds. It scored 0.9674 on the held-out evaluation set against the
+incumbent's 0.9565, with poison resistance 0.9925, a false-positive rate of
+0.0305 and a pool of 1,889 rows. All four promotion gates passed and the
+candidate was promoted as model v2. Rejection at this point would have been
+a successful outcome rather than an error: the gates exist so that a
+contaminated pool cannot install a model worse than the one already running,
+and the poison-resistance gate in particular is the one an accuracy-only
+check would miss.
+
+Step 12 evaluated model health over the last 48 observations. The twin
+flagged 12, the model independently flagged 12, and they agreed on all 12,
+giving a health score of 1.000 against a floor of 0.4 and no degradation
+signal. A rollback was then forced, in order to exercise the recovery path
+on a healthy system: model v2 was marked untrusted, v1 was reactivated as
+the newest version still trusted, rows were purged by contributor rather
+than wholesale, and the health baseline was reset, because a different model
+has a different notion of normal. Healing is rollback, purge and retrain in
+that order and never in place — poison cannot be subtracted from a trained
+model, only returned from, which is also why the registry never overwrites a
+version and why every pooled row records who contributed it.
+
+
+6.5.6  What this run establishes, and what it does not
+
+The run demonstrates that the twelve stages compose: that futures committed
+in advance can be scored against reality, that the resulting score separates
+honest contributions from five distinct poisoning strategies without a
+single error across thirteen decisions, that the accept threshold can be
+derived at run time from the deployed fleet, and that promotion and recovery
+are gated rather than automatic.
+
+It does not establish superiority over reactive baselines, because no
+baseline was re-implemented and run against the same fleet; that comparison
+is Objective O7 and is delivered in Phase II. It is a single seed on a
+single fleet, so the figures quoted characterise this run rather than a
+distribution over runs. The attack strategies are the five rehearsed in the
+taxonomy, and an adaptive adversary with knowledge of the Counterfactual
+Consistency Score itself is outside the scope of this evaluation.
